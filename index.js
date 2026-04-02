@@ -1,29 +1,37 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const app = express();
 
 app.use(express.json());
 
-const orders = [];
+mongoose.connect(process.env.MONGO_URL)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.log(err));
+
+const orderSchema = new mongoose.Schema({
+  amount: Number,
+  currency: String,
+  status: String
+}, { timestamps: true });
+
+const Order = mongoose.model("Order", orderSchema);
 
 app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-app.post("/create-order", (req, res) => {
+app.post("/create-order", async (req, res) => {
   const { amount, currency = "RON" } = req.body;
 
   if (!amount) {
     return res.status(400).json({ error: "Missing amount" });
   }
 
-  const order = {
-    id: "order_" + Date.now(),
+  const order = await Order.create({
     amount,
     currency,
     status: "PENDING"
-  };
-
-  orders.push(order);
+  });
 
   res.json({
     message: "Order created",
@@ -31,8 +39,8 @@ app.post("/create-order", (req, res) => {
   });
 });
 
-app.get("/order/:id", (req, res) => {
-  const order = orders.find(o => o.id === req.params.id);
+app.get("/order/:id", async (req, res) => {
+  const order = await Order.findById(req.params.id);
 
   if (!order) {
     return res.status(404).json({ error: "Order not found" });
@@ -41,16 +49,10 @@ app.get("/order/:id", (req, res) => {
   res.json(order);
 });
 
-app.post("/webhook", (req, res) => {
-  console.log("Webhook received:", req.body);
-
+app.post("/webhook", async (req, res) => {
   const { orderId, status } = req.body;
 
-  const order = orders.find(o => o.id === orderId);
-
-  if (order) {
-    order.status = status;
-  }
+  await Order.findByIdAndUpdate(orderId, { status });
 
   res.sendStatus(200);
 });
