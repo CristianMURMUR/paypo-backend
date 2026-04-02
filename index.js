@@ -5,7 +5,7 @@ app.use(express.json());
 
 // test simplu
 app.get("/", (req, res) => {
-  res.send("Serverul merge 🚀");
+  res.send("Online");
 });
 
 // endpoint PayPo (mock)
