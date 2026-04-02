@@ -3,24 +3,33 @@ const app = express();
 
 app.use(express.json());
 
-// test simplu
 app.get("/", (req, res) => {
-  res.send("Online");
+  res.send("Server is running 🚀");
 });
 
-// endpoint PayPo (mock)
 app.post("/create-order", (req, res) => {
+  const { amount, currency = "RON", orderId } = req.body;
+
+  if (!amount) {
+    return res.status(400).json({ error: "Missing amount" });
+  }
+
   res.json({
-    redirectUrl: "https://example.com/paypo"
+    message: "Mock PayPo order created",
+    orderId: orderId || "order_" + Date.now(),
+    amount,
+    currency,
+    redirectUrl: "https://example.com/paypo-checkout"
   });
 });
 
-// webhook (mock)
 app.post("/webhook", (req, res) => {
-  console.log("Webhook primit:", req.body);
+  console.log("Webhook received:", req.body);
   res.sendStatus(200);
 });
 
-app.listen(3000, () => {
-  console.log("Server pornit pe http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
 });
